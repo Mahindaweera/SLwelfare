@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
-        /* All CSS from the original file */
         * {
             margin: 0;
             padding: 0;
@@ -22,12 +21,663 @@
             color: #333;
             min-height: 100vh;
             display: flex;
-            align-items: flex-start;
+            align-items: flex-start; /* Align content to the top */
             justify-content: center;
             padding: 20px;
         }
 
-        /* ... rest of the CSS remains unchanged ... */
+        .logo {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 15px;
+        }
+
+        .logo-login {
+            width: 120px;
+            height: auto;
+        }
+
+        .logo-header {
+            width: 90px;
+            height: auto;
+            margin: 0 20px 0 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Styles for when the modal is open */
+        body.modal-open .container {
+            filter: blur(5px);
+            pointer-events: none;
+        }
+
+        .login-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0s 0.3s;
+        }
+
+        .login-modal-overlay.is-visible {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .login-modal-overlay.is-visible .login-container {
+             transform: scale(1);
+        }
+
+        .login-container h1 {
+            font-size: 2.2rem;
+            color: #1a2a6c;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #1a2a6c;
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(to right, #1a2a6c, #3a5fc5);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-login:hover {
+            box-shadow: 0 5px 15px rgba(26, 42, 108, 0.4);
+        }
+
+        .login-error {
+            color: #b21f1f;
+            margin-top: 15px;
+            font-weight: 600;
+            height: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            transition: filter 0.3s ease;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        
+        header {
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            color: #1a2a6c;
+            margin: 0;
+            position: relative;
+            text-align: left;
+        }
+        
+        h1::after {
+            display: none;
+        }
+        
+        .currency-badge {
+            display: inline-block;
+            background: linear-gradient(to right, #1a2a6c, #3a5fc5);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: 500;
+            margin-top: 0;
+            box-shadow: 0 3px 10px rgba(26, 42, 108, 0.3);
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        #screenshotBtn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            background: linear-gradient(to right, #6c757d, #495057);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            font-size: 1.4rem;
+            color: #1a2a6c;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title i {
+            color: #b21f1f;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #1a2a6c, #3a5fc5);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 10px 0;
+            line-height: 1.2;
+        }
+
+        .stat-value-secondary {
+            font-size: 1.2rem;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .qr-code-container {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .qr-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a2a6c;
+            margin-bottom: 10px;
+        }
+
+        .qr-code-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            margin-bottom: 30px;
+            position: relative;
+            max-height: 60vh;
+            transition: max-height 0.5s ease-in-out;
+        }
+
+        .table-container.full-height {
+            max-height: none;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #1a2a6c;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9ff;
+        }
+        
+        tr:hover:not(.month-details) {
+            background-color: #eef2ff;
+        }
+        
+        .name-cell {
+            font-weight: 600;
+            color: #1a2a6c;
+        }
+        
+        .total-cell {
+            font-weight: 700;
+            background: #e3f2fd;
+            font-size: 1.1rem;
+            line-height: 1.3;
+        }
+
+        .secondary-currency {
+            font-size: 0.8em;
+            color: #555;
+            font-weight: 400;
+        }
+        
+        .footer-row {
+            background: #1a2a6c !important;
+            color: white;
+            font-weight: 700;
+            position: sticky;
+            bottom: 0;
+        }
+        
+        .footer-row td {
+            padding: 15px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #1a2a6c, #3a5fc5);
+            color: white;
+            box-shadow: 0 4px 15px rgba(26, 42, 108, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(to right, #b21f1f, #d45a5a);
+            color: white;
+            box-shadow: 0 4px 15px rgba(178, 31, 31, 0.3);
+        }
+
+        .btn-update {
+             background: linear-gradient(to right, #ff8c00, #ffae42);
+             color: white;
+             padding: 8px 16px;
+             font-size: 0.9rem;
+        }
+        
+        .btn-toggle {
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: white;
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-top: 20px;
+        }
+        
+        .currency {
+            font-weight: 700;
+            color: #1a2a6c;
+        }
+        
+        .usd-highlight {
+            background-color: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .month-details {
+            display: none;
+            background: #f9f9f9;
+        }
+        
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            padding: 15px;
+        }
+        
+        .month-card {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .month-title {
+            font-weight: 600;
+            color: #1a2a6c;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .month-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+            line-height: 1.3;
+        }
+        
+        .expand-btn {
+            background: none;
+            border: none;
+            color: #1a2a6c;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+            padding: 5px;
+        }
+        
+        .expand-btn:hover {
+            color: #3a5fc5;
+        }
+        
+        .expanded .expand-btn {
+            transform: rotate(180deg);
+        }
+        
+        .member-row.expanded {
+            background-color: #eef7ff;
+        }
+        
+        .summary-row {
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .month-header {
+            min-width: 80px;
+        }
+
+        /* Member Update Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0s 0.3s;
+        }
+
+        .modal-overlay.is-visible {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease, visibility 0s 0s;
+        }
+
+        .modal-content {
+            position: relative;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.is-visible .modal-content {
+            transform: scale(1);
+        }
+
+
+        .close-modal-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #888;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            width: auto;
+            box-shadow: none;
+        }
+        .close-modal-btn:hover {
+            color: #333;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .modal-content h2 {
+            color: #1a2a6c;
+            margin-bottom: 20px;
+        }
+
+        .modal-form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .modal-form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .modal-form-group input, .modal-form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .payments-grid, #report-member-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        #report-member-list {
+             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+             max-height: 300px;
+        }
+
+        .payment-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-actions {
+            margin-top: 25px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .modal-actions .btn-secondary {
+             background: linear-gradient(to right, #6c757d, #495057);
+        }
+        
+        #ocr-status, #confirmation-details p {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #1a2a6c;
+            text-align: left;
+            line-height: 1.6;
+        }
+        
+        #confirmation-details strong {
+            color: #333;
+        }
+        
+        @media (max-width: 992px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -35,7 +685,7 @@
 
     <div id="loginModalOverlay" class="login-modal-overlay">
         <div class="login-container">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%231a2a6c'/%3E%3Ctext x='12' y='16' text-anchor='middle' fill='white' font-size='10' font-family='Arial'%3EWA%3C/text%3E%3C/svg%3E" alt="Welfare Association Logo" class="logo logo-login">
+            <img src="logo.png" alt="Welfare Association Logo" class="logo logo-login" onerror="this.style.display='none'">
             <h1><i class="fas fa-lock"></i> Login</h1>
             <div class="input-group">
                 <i class="fas fa-user"></i>
@@ -50,10 +700,11 @@
         </div>
     </div>
 
+
     <div id="mainContent" class="container">
         <header>
             <div class="header-left">
-                 <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%231a2a6c'/%3E%3Ctext x='12' y='16' text-anchor='middle' fill='white' font-size='10' font-family='Arial'%3EWA%3C/text%3E%3C/svg%3E" alt="Welfare Association Logo" class="logo logo-header">
+                 <img src="logo.png" alt="Welfare Association Logo" class="logo logo-header" onerror="this.style.display='none'">
                  <h1><i class="fas fa-hands-helping"></i> Sri Lankan Community Welfare</h1>
             </div>
             <div class="header-right">
@@ -90,7 +741,7 @@
                 </div>
                 <div class="qr-code-container">
                     <h3 class="qr-title">Scan to Contribute</h3>
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='white'/%3E%3Cpath d='M4 4h4v4H4zM4 16h4v4H4zM16 4h4v4h-4zM16 16h4v4h-4zM8 8h2v2H8zM8 14h2v2H8zM14 8h2v2h-2zM14 14h2v2h-2z' fill='black'/%3E%3C/svg%3E" alt="Contribution QR Code" class="qr-code-image">
+                    <img src="main_qr.png" alt="Contribution QR Code" class="qr-code-image" onerror="this.style.display='none'">
                 </div>
                 <div id="ocr-status" style="text-align:center; margin-top: 15px;"></div>
             </div>
@@ -124,8 +775,7 @@
                     </tr>
                 </thead>
                 <tbody id="contribution-table-body">
-                    <!-- Populated by JS -->
-                </tbody>
+                    </tbody>
                 <tfoot>
                     <tr class="footer-row">
                         <td colspan="5">Grand Totals</td>
@@ -147,11 +797,9 @@
         </div>
         
         <footer id="footer-info">
-            <!-- Populated by JS -->
-        </footer>
+            </footer>
     </div>
     
-    <!-- Modals -->
     <div id="memberModal" class="modal-overlay">
         <div class="modal-content">
             <button type="button" class="close-modal-btn">&times;</button>
@@ -202,6 +850,7 @@
              </div>
         </div>
     </div>
+
 
     <script>
         // --- DATA & STORAGE ---
@@ -755,7 +1404,7 @@
         }
         
         function closeReportModal() {
-             document.getElementById('reportModal').classlection.remove('is-visible');
+             document.getElementById('reportModal').classList.remove('is-visible');
         }
         
         function openConfirmationModal(data) {
